@@ -27,14 +27,10 @@ const RuleCard: React.FC<Props> = ({ item, fontSize, highContrast, darkMode }) =
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-4">
-            <div className={`w-14 h-14 p-3.5 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105 ${
-              darkMode ? 'bg-slate-800 text-indigo-400' : 'bg-slate-50 text-indigo-600'
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105 ${
+              darkMode ? 'bg-slate-800' : 'bg-slate-50'
             }`}>
-              {CATEGORY_ICONS[item.category] || (
-                <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
+              {CATEGORY_ICONS[item.category] || '📋'}
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1.5">

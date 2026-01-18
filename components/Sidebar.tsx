@@ -121,15 +121,9 @@ const Sidebar: React.FC<Props> = ({ isOpen, activeView, onViewChange, activeCate
                     title={!isOpen ? cat : undefined}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 transition-transform duration-300 ${activeCategory === cat ? 'scale-110 text-indigo-500' : 'group-hover:scale-110'}`}>
-                        {cat === 'Todos' ? (
-                          <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
-                        ) : (
-                          CATEGORY_ICONS[cat as RuleCategory]
-                        )}
-                      </div>
+                      <span className={`text-xl transition-transform duration-300 ${activeCategory === cat ? 'scale-110' : 'group-hover:scale-110'}`}>
+                        {cat === 'Todos' ? '🌐' : CATEGORY_ICONS[cat as RuleCategory]}
+                      </span>
                       {isOpen && <span className="text-sm tracking-tight">{cat}</span>}
                     </div>
                     {activeCategory === cat && isOpen && (

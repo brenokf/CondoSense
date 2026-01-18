@@ -1,48 +1,67 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { RegulationItem } from "../types";
+import { RegulationItem, RegulationUpdate } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const regulationSchema = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-      title: { type: Type.STRING, description: 'Título curto e direto para a regra' },
-      category: { 
-        type: Type.STRING, 
-        description: 'Categoria da regra (Geral, Silêncio e Ruídos, Animais de Estimação, Garagem e Tráfego, Áreas Comuns e Lazer, Obras e Reformas, Segurança e Acesso, Lixo e Sustentabilidade, Taxas e Multas, Assembleias e Gestão)' 
-      },
-      content: { type: Type.STRING, description: 'O texto técnico original da regra' },
-      summary: { type: Type.STRING, description: 'Um resumo de 1 frase em linguagem simples' },
-      explanation: { type: Type.STRING, description: 'Explique POR QUE a regra existe de forma amigável' },
-      importance: { type: Type.STRING, description: 'Por que esta regra é importante para a comunidade' },
-      tags: { 
-        type: Type.ARRAY, 
-        items: { type: Type.STRING },
-        description: 'Palavras-chave para busca'
-      },
+  type: Type.OBJECT,
+  properties: {
+    regulations: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          category: { type: Type.STRING },
+          content: { type: Type.STRING },
+          summary: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          importance: { type: Type.STRING },
+          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+        required: ['title', 'category', 'content', 'summary', 'explanation', 'importance', 'tags'],
+      }
     },
-    required: ['title', 'category', 'content', 'summary', 'explanation', 'importance', 'tags'],
+    updateSummary: {
+      type: Type.OBJECT,
+      properties: {
+        reason: { type: Type.STRING, description: 'Motivo principal da atualização detectada' },
+        changes: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              type: { type: Type.STRING, description: 'added, removed ou modified' },
+              itemTitle: { type: Type.STRING },
+              description: { type: Type.STRING, description: 'Resumo da alteração para o morador' }
+            }
+          }
+        }
+      }
+    }
   },
+  required: ['regulations', 'updateSummary']
 };
 
-export async function analyzeRegulations(pdfBase64: string): Promise<RegulationItem[]> {
+export async function analyzeAndCompareRegulations(pdfBase64: string, currentRegulations: RegulationItem[]): Promise<{ items: RegulationItem[], update: RegulationUpdate | null }> {
   try {
+    const currentContext = JSON.stringify(currentRegulations.map(r => ({ title: r.title, content: r.content })));
+    
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: [
         {
-          inlineData: {
-            mimeType: "application/pdf",
-            data: pdfBase64
-          }
+          inlineData: { mimeType: "application/pdf", data: pdfBase64 }
         },
         {
-          text: `Analise este regulamento interno de condomínio e transforme-o em um array JSON estruturado seguindo o schema fornecido. 
-          IMPORTANT: All output text must be in Portuguese (Brazil). 
-          Explain each rule in a friendly way for residents.`
+          text: `Você é um especialista jurídico em condomínios. 
+          1. Extraia todas as regras do PDF.
+          2. Compare com as regras atuais: ${currentContext}.
+          3. Identifique o que mudou.
+          4. Se for a primeira vez (contexto vazio), o updateSummary deve refletir "Implantação Inicial".
+          
+          Responda estritamente em Português do Brasil no formato JSON especificado.`
         }
       ],
       config: {
@@ -52,13 +71,26 @@ export async function analyzeRegulations(pdfBase64: string): Promise<RegulationI
       },
     });
 
-    const results = JSON.parse(response.text || '[]');
-    return results.map((item: any, index: number) => ({
+    const data = JSON.parse(response.text || '{}');
+    const versionId = `v-${Date.now()}`;
+    
+    const items: RegulationItem[] = data.regulations.map((item: any, index: number) => ({
       ...item,
-      id: `ai-${Date.now()}-${index}`,
+      id: `reg-${versionId}-${index}`,
     }));
+
+    const hasRealChanges = data.updateSummary?.changes?.length > 0;
+    
+    const update: RegulationUpdate | null = hasRealChanges ? {
+      versionId,
+      date: new Date().toLocaleDateString('pt-BR'),
+      reason: data.updateSummary.reason,
+      changes: data.updateSummary.changes
+    } : null;
+
+    return { items, update };
   } catch (error) {
-    console.error("Falha na análise do Gemini:", error);
+    console.error("Gemini Analysis Error:", error);
     throw error;
   }
 }

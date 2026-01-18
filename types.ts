@@ -27,6 +27,17 @@ export interface RegulationItem {
   tags: string[];
 }
 
+export interface RegulationUpdate {
+  versionId: string;
+  date: string;
+  reason: string;
+  changes: {
+    type: 'added' | 'removed' | 'modified';
+    itemTitle: string;
+    description: string;
+  }[];
+}
+
 export interface Suggestion {
   id: string;
   title: string;
