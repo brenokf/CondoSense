@@ -14,6 +14,8 @@ export enum RuleCategory {
 
 export type UserRole = 'admin' | 'morador';
 
+export type ActiveView = 'regulations' | 'suggestions';
+
 export interface RegulationItem {
   id: string;
   title: string;
@@ -23,6 +25,18 @@ export interface RegulationItem {
   explanation: string;
   importance: string;
   tags: string[];
+}
+
+export interface Suggestion {
+  id: string;
+  title: string;
+  description: string;
+  author: string;
+  votes: number;
+  category: string;
+  createdAt: string;
+  status: 'Pendente' | 'Em Análise' | 'Planejado' | 'Concluído';
+  votedByMe?: boolean;
 }
 
 export interface AccessibilityConfig {
